@@ -1,7 +1,7 @@
 import sys
 import os
 from unittest import TestCase,mock
-from tic_tac_toe import check_for_int, Game
+from tic_tac_toe import Game
 
 
 class HiddenPrints:
