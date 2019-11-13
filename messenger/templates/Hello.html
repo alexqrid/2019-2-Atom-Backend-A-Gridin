@@ -10,11 +10,9 @@
     </h1>
     <p> You are on chat page. Links available for testing is:</p>
     {% for i in links %}
-        {% load util %}
-            {% if i|is_str == True %}
-                <li> <a href={{ i }}> {{ i }} </a></li>
-            {% endif %}
-
+        <li>
+            <a href={% url i %}> go to {{ i }} </a>
+        </li>
     {% endfor %}
 </body>
 </html>

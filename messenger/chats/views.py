@@ -1,58 +1,59 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
-from django.template.defaultfilters import register
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from django.urls import get_resolver
+from .models import Chat, Member
+from users.models import User
 
 
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def chat_list(request):
+    # try:
+    #     user = User.objects.get(username=request.GET['username'])
+    # except User.DoesNotExist:
+    #     return JsonResponse({"Error": "User does not exists"}, status=404)
+    # chats = Member.objects.select_related('Chat').filter(user_id=user)
+    chats = {'chats': []}
+    for i in Chat.objects.all():
+        chats['chats'].append({
+            "id": i.id,
+            "title": i.title,
+            "description": i.description
+        }
+        )
+    return JsonResponse(chats)
+
+
+@require_http_methods(['GET', 'POST'])
+def chat(request):
     return JsonResponse({
-                         "chats_count": 2,
-                         "chats": [{
-                                     "id":121312,
-                                     "Members_id":[1,2,43,4],
-                                     "admins_id":[2],
-                                      },
-                                    {
-                                      "id": 2,
-                                      "Members_id": [1, 3, 2, 9],
-                                      "admins_id": [2]
-                                    }]
+        "last_messages_count": 10,
+        "last_message_id": 103,
+        "opponent_id": 2
     })
 
 
-@require_http_methods(['GET'])
-def profile(request, id=0):
-    return JsonResponse({"profile_id": id,
-                         "Username": "Test",
-                         "Last_login": "23.10.2019 22:42",
-                         "chats_id": [1,2]})
-
-
-@require_http_methods(['GET'])
-def contacts(request):
-    return JsonResponse({"Contacts":[
-                                    {"profile_id": 2,
-                                     "Username":"Test",
-                                     "Last_login": "23.10.2019 22:42"
-                                     },
-                                    {"profile_id": 3,
-                                     "Username": "Tester",
-                                     "Last_login": "21.10.2019 22:42"
-                                     }
-                                    ]})
-
-
-@require_http_methods(['GET'])
-def chat(request):
-    return JsonResponse({
-                            "last_messages_count": 10,
-                            "last_message_id": 103,
-                            "opponent_id": 2
-                        })
-
-
-@require_http_methods(["GET"])
+@require_http_methods(["GET", 'POST'])
 def hello(request, name="Stranger"):
-    return render(request, 'Hello.html', {'name': name,'links': get_resolver().reverse_dict.keys()})
+    return render(request, 'Hello.html', {'name': name, 'links': ['chat', 'list', 'contacts']})
+
+
+@require_http_methods(['POST'])
+@csrf_exempt
+def create_chat(request):
+    owner = request.POST['from']
+    to = request.POST['to']
+    try:
+        user = User.objects.get(username=owner)
+        acceptor = User.objects.get(username=to)
+    except User.DoesNotExist:
+        return JsonResponse({"Error": "User does not exists"}, status=404)
+    new_chat = Chat()
+    new_chat.title = request.POST['title']
+    desc = request.POST['description']
+    if desc:
+        new_chat.description = desc
+    new_chat.save()
+    Member.objects.create(user_id=user, chat_id=new_chat)
+    Member.objects.create(user_id=acceptor, chat_id=new_chat)
+    return JsonResponse({"description": "You have successfully created new chat"}, status=200)
