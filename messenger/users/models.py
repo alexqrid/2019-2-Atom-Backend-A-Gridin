@@ -19,7 +19,7 @@ class User(AbstractUser):
         ordering = ["id"]
 
     def get_absolute_url(self):
-        reverse('Users', kwargs={'chat_id': self.id})
+        reverse('users', kwargs={'chat_id': self.id})
 
     def __str__(self):
-        return self.first_name + " " + self.last_name
+        return self.username
